@@ -24,9 +24,9 @@ class SubeTemsilcisi(models.Model):
 
 # Create your models here.
 class Randevu(models.Model):
-    secili_sube = models.ForeignKey("cinarspa_models.models.Sube", on_delete=models.CASCADE)
+    secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
     hizmet_turu = models.CharField(max_length=30)
-    tarih = models.DateField()
+    tarih = models.DateTimeField()
     def __str__(self):
         return (
             self.secili_sube.sube_ismi

@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "cinarspa_models.apps.CinarspaModelsConfig"
 ]
 
 REST_FRAMEWORK = {
