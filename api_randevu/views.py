@@ -30,18 +30,21 @@ class createAppointment(APIView):
         try:
             data: dict = request.data
             if containsInDictionaryKey(
-                data, ["isimSoyisim", "hizmetTipi", "subeId", "tarih"]
+                data, ["isim", "soyisim", "hizmetTipi", "subeId", "randevuTarih"]
             ):
                 # create RANDEVU(Appointment) instance - RANDEVU örneği yaratma
                 # find SUBE (Branch) - şube arama
                 subeler = Sube.objects.filter(id=data.get("subeId"))
                 if subeler.count() > 0:
                     sube = subeler[0]
-                    tarih = dateUtilParse(data.get("tarih"))
+                    tarih = dateUtilParse(data.get("randevuTarih"))
                     #tarih = datetime.strptime(data.get("tarih"),"%Y-%m-%dT%H:%M:%S.%Z")
-                    randevu = Randevu(secili_sube = sube,
-                            hizmet_turu  = data.get("hizmetTipi"),
-                            tarih = tarih,
+                    randevu = Randevu(
+                        secili_sube=sube,
+                        hizmet_turu=data.get("hizmetTipi"),
+                        tarih=tarih,
+                        musteri_isim=data.get("isim"),
+                        musteri_soyisim=data.get("soyisim")
                     )
                     randevu.save()
                     return createErrorResponse(
@@ -56,7 +59,7 @@ class createAppointment(APIView):
                 return createErrorResponse(
                     400,
                     {
-                        "message": """1 field or more than 1 fields are missing. Needed "isimSoyisim" (first - last names),"hizmetTipi" (service type),"subeId" (branch identify),"tarih" (date with hours) fields """
+                        "message": """1 field or more than 1 fields are missing. Needed "isim", "soyisim" (first - last names),"hizmetTipi" (service type),"subeId" (branch identify),"tarih" (date with hours) fields """
                     },
                 )  #
 

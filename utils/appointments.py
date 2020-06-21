@@ -7,15 +7,15 @@ from utils.SubeIliskileri import iliskiliSubeler
 
 def makeArraySerializations(user: User):
     appointments = []
-    modelQuery = ""
+    gelenRandevular = ""
+    print(user)
     if user.is_superuser:
-        modelQuery = Randevu.objects.all()
+        gelenRandevular = Randevu.objects.all()
     elif user.is_staff:
         subeList = iliskiliSubeler(user)
-        modelQuery = Randevu.objects.all()
-        # TODO: şeye göre filtrele
+        gelenRandevular = Randevu.objects.filter(secili_sube__in=subeList)
 
-    for randevuInstance in Randevu.objects.all():
+    for randevuInstance in gelenRandevular:
         serializer = RandevuSerializer(randevuInstance)
         appointments.append(serializer.data)
     return appointments
