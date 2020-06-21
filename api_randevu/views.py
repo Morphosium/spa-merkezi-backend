@@ -1,22 +1,31 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from utils.arrayUtils import containsInDictionaryKey
 from utils.errorResponse import createErrorResponse
+from utils.appointments import makeArraySerializations
 from cinarspa_models.models import Sube, SubeTemsilcisi, Randevu
 from datetime import datetime
+from .serializers import RandevuSerializer
 import traceback
 import sys
 from dateutil.parser import parse as dateUtilParse
 # Create your views here.
 
-
+class fetchAuthorizedAppointments(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            return Response(makeArraySerializations(request.user))    
+        except Exception as exception:
+            traceback.print_exc()
+            return createErrorResponse(500,{"error": str(exception.__class__)})
 
 
 class createAppointment(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
         try:
             data: dict = request.data
@@ -40,7 +49,7 @@ class createAppointment(APIView):
                     )
                 else:
                     return createErrorResponse(
-                        400, {"message": """ Branch not found """}
+                        400, {"message": """Branch not found"""}
                     )  #
 
             else:
