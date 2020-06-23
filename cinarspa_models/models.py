@@ -46,4 +46,12 @@ class Randevu(models.Model):
         verbose_name_plural = "Randevular"
 
 
-
+class MusteriGirisi(models.Model):
+    musteri_isim = models.CharField(max_length=50)
+    musteri_soyisim = models.CharField(max_length=50)
+    hizmet_turu = models.CharField(max_length=30)
+    secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
+    giris_tarih = models.DateTimeField()
+    cikis_tarih = models.DateTimeField(blank=True, null=True)
+    ucret = models.IntegerField(default=0)
+    calisan = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)

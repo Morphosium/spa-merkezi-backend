@@ -7,6 +7,7 @@ urlpatterns = [
     # Your URLs...
       url(r'^appointment/create', createAppointment.as_view()),
       url(r'^appointment/fetch', fetchAuthorizedAppointments.as_view()),
+
 ]
 
 app_name = 'randevu_api'

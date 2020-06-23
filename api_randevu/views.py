@@ -15,7 +15,9 @@ from dateutil.parser import parse as dateUtilParse
 # Create your views here.
 
 class fetchAuthorizedAppointments(APIView):
+
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         try:
             return Response(makeArraySerializations(request.user))    
@@ -25,7 +27,9 @@ class fetchAuthorizedAppointments(APIView):
 
 
 class createAppointment(APIView):
+
     permission_classes = [AllowAny]
+
     def post(self, request):
         try:
             data: dict = request.data
