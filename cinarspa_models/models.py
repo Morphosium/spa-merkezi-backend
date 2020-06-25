@@ -30,6 +30,8 @@ class SubeTemsilcisi(models.Model):
 class Randevu(models.Model):
     musteri_isim = models.CharField(max_length=50)
     musteri_soyisim = models.CharField(max_length=50)
+    musteri_email = models.CharField(max_length=100)
+    musteri_tel = models.CharField(max_length=20, default="")
     secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
     hizmet_turu = models.CharField(max_length=30)
     tarih = models.DateTimeField()
