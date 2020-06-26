@@ -27,10 +27,12 @@ class createUser(APIView):
     def post(self, request):
         try:
             subeId = request.data["subeId"] if "subeId" in request.data else -1
+            arananSube = None
             if subeId == -1:
                 return createErrorResponse(404, {"message": "Branch not found"})
             else:
-                if iliskiVarMi(request.user, subeId) is False:
+                arananSube = iliskiVarMi(request.user, subeId)
+                if arananSube is None:
                     return createErrorResponse(404, {"message": "Branch not found"})
 
             if request.user.is_staff:
