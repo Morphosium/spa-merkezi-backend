@@ -51,6 +51,8 @@ class Randevu(models.Model):
 class MusteriGirisi(models.Model):
     musteri_isim = models.CharField(max_length=50)
     musteri_soyisim = models.CharField(max_length=50)
+    musteri_email = models.CharField(max_length=80, default="")
+    musteri_tel = models.CharField(max_length=20, default="")
     hizmet_turu = models.CharField(max_length=30)
     secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
     giris_tarih = models.DateTimeField()

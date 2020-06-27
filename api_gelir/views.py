@@ -20,7 +20,9 @@ import re
 
 
 class musteriGirisleri(APIView):
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [
+        IsAuthenticated,
+    ]
     """Müşteri girişlerini getirmek için kullanılır
         query parametreleri
         - sadece-cikmayanlar = 1 ise çıkış tarihi null olanlar döner
@@ -39,13 +41,14 @@ class musteriGirisleri(APIView):
 
         subeId: str = request.query_params.get("sube")
         if (
-                subeId != "" and
-                subeId is not None and
-                re.match("^([0-9].*)$", subeId) is not None):
+            subeId != ""
+            and subeId is not None
+            and re.match("^([0-9].*)$", subeId) is not None
+        ):
             subeFiltre = int(subeId)
 
         customersQ = MusteriGirisi.objects
-        if (sadeceCikmayanlar):
+        if sadeceCikmayanlar:
             customersQ = customersQ.filter(cikis_tarih__isnull=True)
         relations = iliskiliSubeler(request.user)
         if request.user.is_superuser:
@@ -58,48 +61,81 @@ class musteriGirisleri(APIView):
                     customerEntries = customersQ.filter(secili_sube=iliskiliSube).all()
                     return Response(makeArraySerializationsQuery(customerEntries))
                 else:
-                    return createErrorResponse(403,
-                                               {"message": "You aren't related with ŞUBE(Branch)" + str(subeFiltre)})
+                    return createErrorResponse(
+                        403,
+                        {
+                            "message": "You aren't related with ŞUBE(Branch)"
+                            + str(subeFiltre)
+                        },
+                    )
             else:
                 customerEntries = customersQ.filter(secili_sube__in=relations)
                 return Response(makeArraySerializationsQuery(customerEntries.all()))
 
 
 class yeniMusteriGirisi(APIView):
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [
+        IsAuthenticated,
+    ]
 
     def post(self, request):
+        #TODO: İlgelenen çalışan ekleme
         try:
             data: dict = request.data
             if containsInDictionaryKey(
-                    data, ["isim", "soyisim", "hizmetTipi", "girisTarihi", "sube"]
-                    # optional fields = ucret, cikisTarihi
+                data,
+                [
+                    "musteri_isim",
+                    "musteri_soyisim",
+                    "hizmet_turu",
+                    "giris_tarih",
+                    "secili_sube",
+                ]
+                # optional fields = ucret, cikisTarihi
             ):
                 cikis_tarih = None
-                giris_tarih = dateUtilParse(data.get("girisTarihi"))
+                giris_tarih = dateUtilParse(data.get("giris_tarih"))
+
+                email = ""
+                tel = ""
+                if "musteri_email" in data:
+                    email = data.get("musteri_email")
+
+                if "musteri_tel" in data:
+                    tel = data.get("musteri_tel")
+
                 ucret = data.get("ucret")
 
-                if (data.get("cikisTarihi") is not None):
-                    cikis_tarih = dateUtilParse(data.get("cikisTarihi"))
-                iliski = iliskiVarMi(request.user, data.get("sube"))
-                if (iliski is not None):
+                if data.get("cikis_tarih") is not None:
+                    cikis_tarih = dateUtilParse(data.get("cikis_tarih"))
+
+                iliski = iliskiVarMi(request.user, data.get("secili_sube"))
+
+                if iliski is not None:
                     musteriKayit = MusteriGirisi(
-                        musteri_isim=data.get("isim"),
-                        musteri_soyisim=data.get("soyisim"),
-                        hizmet_turu=data.get("hizmetTipi"),
+                        musteri_isim=data.get("musteri_isim"),
+                        musteri_soyisim=data.get("musteri_soyisim"),
+                        musteri_email=email,
+                        musteri_tel=tel,
+                        hizmet_turu=data.get("hizmet_turu"),
                         secili_sube=iliski.sube,
                         giris_tarih=giris_tarih,
                         cikis_tarih=cikis_tarih,
                         ucret=ucret if ucret is not None else 0,
-                        calisan=request.user
+                        calisan=request.user,
                     )
                     musteriKayit.save()
-                    return createErrorResponse(200, MusteriGirisiSerializer(musteriKayit).data)
+                    return createErrorResponse(
+                        200, MusteriGirisiSerializer(musteriKayit).data
+                    )
                 else:
-                    return createErrorResponse(403, {"message":
-                                                         "You aren't related with ŞUBE(Branch)" + str(
-                                                             request.data.get("sube"))
-                                                     })
+                    return createErrorResponse(
+                        403,
+                        {
+                            "message": "You aren't related with ŞUBE(Branch)"
+                            + str(request.data.get("sube"))
+                        },
+                    )
 
             else:
                 return createErrorResponse(

@@ -5,10 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Django",
+            "name": "Python: Django but windows",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}\\manage.py",
+            "args": [
+                "runserver",
+            ],
+            "django": true
+        },
+        {
+            "name": "Python: Django but linux",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "runserver",
             ],

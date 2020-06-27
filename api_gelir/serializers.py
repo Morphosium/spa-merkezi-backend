@@ -5,4 +5,14 @@ from rest_framework import serializers
 class MusteriGirisiSerializer(serializers.ModelSerializer):
     class Meta:
         model = MusteriGirisi
-        fields = ['id', 'secili_sube', 'hizmet_turu', 'giris_tarih', 'cikis_tarih']
+        fields = [
+            "id",
+            "musteri_isim",
+            "musteri_soyisim",
+            "musteri_email",
+            "musteri_tel",
+            "secili_sube",
+            "hizmet_turu",
+            "giris_tarih",
+            "cikis_tarih",
+        ]
