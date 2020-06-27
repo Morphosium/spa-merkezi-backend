@@ -67,3 +67,11 @@ class createUser(APIView):
             traceback.print_exc()
             return createErrorResponse(500, {"error": str(exception.__class__)})
 
+class getBranches(APIView):
+    permission_classes = [IsAuthenticated]
+    def get (self, request):
+        subeler = iliskiliSubeler(request.user)
+        ls = [{"id": sube.id, "name": sube.sube_ismi, "address": sube.adres}
+              for sube in subeler]
+
+        return Response(ls)
