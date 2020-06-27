@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from utils.errorResponse import createErrorResponse
 from .serializers import UserSerializer
-from utils.SubeIliskileri import iliskiVarMi, iliskiliSubeler
+from utils.SubeIliskileri import iliskiVarMi, iliskiliSubeler, iliskiliKullanicilar
 from cinarspa_models.models import SubeTemsilcisi
 # Create your views here.
 
@@ -75,3 +75,13 @@ class getBranches(APIView):
               for sube in subeler]
 
         return Response(ls)
+
+class getStaffsInBranch(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, sube):
+        if iliskiVarMi(request.user, sube) is not None:
+            calisanlar = iliskiliKullanicilar(sube)
+            calisanlar_parsed = [UserSerializer(calisan).data for calisan in calisanlar]
+            return createErrorResponse(202, calisanlar_parsed)
+        else:
+            return createErrorResponse(403, {"message": "Unauthorized branch"})

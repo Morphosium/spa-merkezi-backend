@@ -5,9 +5,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
+from django.contrib.auth.models import User
 from api_gelir.serializers import MusteriGirisiSerializer
-from cinarspa_models.models import MusteriGirisi
+from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi
+from utils import SubeIliskileri
 from utils.SubeIliskileri import iliskiliSubeler, iliskiVarMi
 from utils.arrayUtils import containsInDictionaryKey
 from utils.errorResponse import createErrorResponse
@@ -90,53 +91,61 @@ class yeniMusteriGirisi(APIView):
                     "hizmet_turu",
                     "giris_tarih",
                     "secili_sube",
+                    "calisan"
                 ]
                 # optional fields = ucret, cikisTarihi
             ):
-                cikis_tarih = None
-                giris_tarih = dateUtilParse(data.get("giris_tarih"))
-
-                email = ""
-                tel = ""
-                if "musteri_email" in data:
-                    email = data.get("musteri_email")
-
-                if "musteri_tel" in data:
-                    tel = data.get("musteri_tel")
-
-                ucret = data.get("ucret")
-
-                if data.get("cikis_tarih") is not None:
-                    cikis_tarih = dateUtilParse(data.get("cikis_tarih"))
-
-                iliski = iliskiVarMi(request.user, data.get("secili_sube"))
-
-                if iliski is not None:
-                    musteriKayit = MusteriGirisi(
-                        musteri_isim=data.get("musteri_isim"),
-                        musteri_soyisim=data.get("musteri_soyisim"),
-                        musteri_email=email,
-                        musteri_tel=tel,
-                        hizmet_turu=data.get("hizmet_turu"),
-                        secili_sube=iliski.sube,
-                        giris_tarih=giris_tarih,
-                        cikis_tarih=cikis_tarih,
-                        ucret=ucret if ucret is not None else 0,
-                        calisan=request.user,
+                ilgili_calisan_id = data.get("calisan")
+                bulunanCalisan = SubeTemsilcisi.objects.filter(
+                    kullanici__id=int(ilgili_calisan_id),
+                    sube__id=int(data.get("secili_sube"))
                     )
-                    musteriKayit.save()
-                    return createErrorResponse(
-                        200, MusteriGirisiSerializer(musteriKayit).data
-                    )
+                if bulunanCalisan.count() > -1:
+                    cikis_tarih = None
+                    giris_tarih = dateUtilParse(data.get("giris_tarih"))
+
+                    email = ""
+                    tel = ""
+                    if "musteri_email" in data:
+                        email = data.get("musteri_email")
+
+                    if "musteri_tel" in data:
+                        tel = data.get("musteri_tel")
+
+                    ucret = data.get("ucret")
+
+                    if data.get("cikis_tarih") is not None:
+                        cikis_tarih = dateUtilParse(data.get("cikis_tarih"))
+
+                    iliski = iliskiVarMi(request.user, data.get("secili_sube"))
+
+                    if iliski is not None:
+                        musteriKayit = MusteriGirisi(
+                            musteri_isim=data.get("musteri_isim"),
+                            musteri_soyisim=data.get("musteri_soyisim"),
+                            musteri_email=email,
+                            musteri_tel=tel,
+                            hizmet_turu=data.get("hizmet_turu"),
+                            secili_sube=iliski.sube,
+                            giris_tarih=giris_tarih,
+                            cikis_tarih=cikis_tarih,
+                            ucret=ucret if ucret is not None else 0,
+                            calisan=request.user,
+                        )
+                        musteriKayit.save()
+                        return createErrorResponse(
+                            200, MusteriGirisiSerializer(musteriKayit).data
+                        )
+                    else:
+                        return createErrorResponse(
+                            403,
+                            {
+                                "message": "You aren't related with ŞUBE(Branch)"
+                                           + str(request.data.get("sube"))
+                            },
+                        )
                 else:
-                    return createErrorResponse(
-                        403,
-                        {
-                            "message": "You aren't related with ŞUBE(Branch)"
-                            + str(request.data.get("sube"))
-                        },
-                    )
-
+                    createErrorResponse(404, {"message": "Corresponding User in branch not found"})
             else:
                 return createErrorResponse(
                     400,
@@ -146,6 +155,40 @@ class yeniMusteriGirisi(APIView):
                                     "subeId" (branch identify),"tarih" (date with hours) fields """
                     },
                 )  #
+
+        except Exception as exception:
+            traceback.print_exc()
+            return createErrorResponse(500, {"error": str(exception.__class__)})
+
+
+class musteriCikisi(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+    def post(self, request : Request):
+        try:
+            q = request.data
+            kayitId = q.get("kayit_id")
+            if kayitId is not None and kayitId > -1:
+                girisler = MusteriGirisi.objects.filter(id=kayitId)
+                if girisler.count() > 0:
+                    giris: MusteriGirisi = girisler[0]
+                    sube = iliskiVarMi(request.user, giris.secili_sube.id)
+                    if sube is not None:
+                        if containsInDictionaryKey(q,[
+                            "cikis_tarih", "ucret"
+                        ]):
+                            cikis_tarih = dateUtilParse(q.get("cikis_tarih"))
+                            giris.cikis_tarih = cikis_tarih
+                            giris.ucret = q.get("ucret")
+                            giris.save()
+                            return createErrorResponse(200, {"message": "Record updated"})
+                    else:
+                        return createErrorResponse(403, {"message": "Unauthorized for this branch"})
+                else:
+                    return createErrorResponse(404, {"message": "Record not found"})
+            else:
+                return createErrorResponse(400, {"message": "Record not provided correctly"})
 
         except Exception as exception:
             traceback.print_exc()

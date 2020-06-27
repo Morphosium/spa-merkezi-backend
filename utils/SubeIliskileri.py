@@ -6,6 +6,9 @@ from cinarspa_models.models import SubeTemsilcisi
 def iliskiliSubeler(user : User) -> list:
     return [temsil.sube for temsil in SubeTemsilcisi.objects.filter(kullanici = user)]
 
+def iliskiliKullanicilar(sube_id : int) -> list:
+    return [temsil.kullanici for temsil in SubeTemsilcisi.objects.filter(sube__id=sube_id)]
+
 def iliskiVarMi(user: User, subeId = 0, alreadySubeList= None) -> bool:
     if alreadySubeList is not None:
         branchrel = filter(lambda sube: sube.id == subeId, alreadySubeList)

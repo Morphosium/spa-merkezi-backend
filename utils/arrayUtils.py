@@ -1,8 +1,9 @@
-def containsInDictionaryKey(dictionary : dict, keys : list) -> bool:
+def containsInDictionaryKey(data : dict, keys : list) -> bool:
     flag = True
-    incomingKeys =  dictionary.keys()
+    incomingKeys = keys
+    dataKeys = data.keys()
     for item in incomingKeys:
-        flag = item in keys
+        flag = item in dataKeys
         if (flag is False):
             break
     return flag
