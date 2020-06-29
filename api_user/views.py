@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from utils.errorResponse import createErrorResponse
 from .serializers import UserSerializer
 from utils.SubeIliskileri import iliskiVarMi, iliskiliSubeler, iliskiliKullanicilar
-from cinarspa_models.models import SubeTemsilcisi
+from cinarspa_models.models import SubeTemsilcisi, Sube
 
 
 # Create your views here.
@@ -76,7 +76,11 @@ class getBranches(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        subeler = iliskiliSubeler(request.user)
+        if request.user.is_superuser:
+            subeler = Sube.objects.all()
+        elif request.user.is_staff:
+            subeler = iliskiliSubeler(request.user)
+
         ls = [{"id": sube.id, "name": sube.sube_ismi, "address": sube.adres}
               for sube in subeler]
 
