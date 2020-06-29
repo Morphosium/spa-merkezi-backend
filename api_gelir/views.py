@@ -119,7 +119,7 @@ class yeniMusteriGirisi(APIView):
 
                     iliski = iliskiVarMi(request.user, data.get("secili_sube"))
 
-                    if iliski is not None:
+                    if request.user.is_superuser or iliski is not None:
                         musteriKayit = MusteriGirisi(
                             musteri_isim=data.get("musteri_isim"),
                             musteri_soyisim=data.get("musteri_soyisim"),
@@ -174,7 +174,7 @@ class musteriCikisi(APIView):
                 if girisler.count() > 0:
                     giris: MusteriGirisi = girisler[0]
                     sube = iliskiVarMi(request.user, giris.secili_sube.id)
-                    if sube is not None:
+                    if request.user.is_superuser or sube is not None:
                         if containsInDictionaryKey(q,[
                             "cikis_tarih", "ucret"
                         ]):
