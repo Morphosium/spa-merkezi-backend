@@ -7,7 +7,11 @@ def iliskiliSubeler(user : User) -> list:
     return [temsil.sube for temsil in SubeTemsilcisi.objects.filter(kullanici = user)]
 
 def iliskiliKullanicilar(sube_id : int) -> list:
-    return [temsil.kullanici for temsil in SubeTemsilcisi.objects.filter(sube__id=sube_id)]
+    if sube_id is not None and sube_id > -1:
+        objects = SubeTemsilcisi.objects.filter(sube__id=sube_id)
+    else:
+        objects = SubeTemsilcisi.objects.all()
+    return [temsil.kullanici for temsil in objects]
 
 def iliskiVarMi(user: User, subeId = 0, alreadySubeList= None) -> bool:
     if alreadySubeList is not None:

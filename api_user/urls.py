@@ -8,7 +8,8 @@ urlpatterns = [
       url(r'^get-user-info/', loggedUserInformation.as_view()),
       url(r'^create-user', createUser.as_view()),
       url(r'^related-branchs', getBranches.as_view()),
-      path('kullanicilar/<int:sube>', getStaffsInBranch.as_view())
+      path('kullanicilar/<int:sube>', getStaffsInBranch.as_view()),
+      path('kullanicilar/', getStaffsInBranch.as_view())
 ]
 
 app_name = 'user_api'
