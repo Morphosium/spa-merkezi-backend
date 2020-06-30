@@ -71,6 +71,13 @@ class createAppointment(APIView):
                 # create RANDEVU(Appointment) instance - RANDEVU örneği yaratma
                 # find SUBE (Branch) - şube arama
                 subeler = Sube.objects.filter(id=data.get("subeId"))
+                email, tel = "", "";
+                if ("musteriEmail" in data.keys()):
+                    email = data.get("musteriEmail")
+
+                if ("musteriTelefon" in data.keys()):
+                    tel = data.get("musteriTelefon")
+
                 if subeler.count() > 0:
                     sube = subeler[0]
                     tarih = dateUtilParse(data.get("randevuTarih"))
@@ -80,7 +87,11 @@ class createAppointment(APIView):
                         hizmet_turu=data.get("hizmetTipi"),
                         tarih=tarih,
                         musteri_isim=data.get("isim"),
-                        musteri_soyisim=data.get("soyisim")
+                        musteri_soyisim=data.get("soyisim"),
+                        musteri_email=email,
+                        musteri_tel=tel
+
+
                     )
                     randevu.save()
                     return createErrorResponse(
