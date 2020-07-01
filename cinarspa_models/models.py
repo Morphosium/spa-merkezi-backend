@@ -26,12 +26,22 @@ class SubeTemsilcisi(models.Model):
         verbose_name_plural = "Şube temsilcileri"
 
 
+class Musteri(models.Model):
+    isim = models.CharField(max_length=30)
+    soyisim = models.CharField(max_length=30)
+    email = models.CharField(max_length=100)
+    tel = models.CharField(max_length=20)
+
+    def __str__(self):
+        return "{} {}".format(self.isim, self.soyisim)
+
+    class Meta:
+        verbose_name = "Müşteri"
+        verbose_name_plural = "Müşteriler"
+
 # Create your models here.
 class Randevu(models.Model):
-    musteri_isim = models.CharField(max_length=50)
-    musteri_soyisim = models.CharField(max_length=50)
-    musteri_email = models.CharField(max_length=100)
-    musteri_tel = models.CharField(max_length=20, default="")
+    musteri = models.ForeignKey("cinarspa_models.Musteri", on_delete=models.CASCADE)
     secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
     hizmet_turu = models.CharField(max_length=30)
     tarih = models.DateTimeField()
@@ -49,13 +59,14 @@ class Randevu(models.Model):
 
 
 class MusteriGirisi(models.Model):
-    musteri_isim = models.CharField(max_length=50)
-    musteri_soyisim = models.CharField(max_length=50)
-    musteri_email = models.CharField(max_length=80, default="")
-    musteri_tel = models.CharField(max_length=20, default="")
+    musteri = models.ForeignKey("cinarspa_models.Musteri", on_delete=models.CASCADE)
     hizmet_turu = models.CharField(max_length=30)
     secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
     giris_tarih = models.DateTimeField()
     cikis_tarih = models.DateTimeField(blank=True, null=True)
     ucret = models.IntegerField(default=0)
     calisan = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    prim = models.IntegerField(default=0)
+    class Meta:
+        verbose_name = "Müşteri Girişi"
+        verbose_name_plural = "Müşteri girişleri"

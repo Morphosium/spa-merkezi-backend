@@ -11,6 +11,7 @@ from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi
 from utils import SubeIliskileri
 from utils.SubeIliskileri import iliskiliSubeler, iliskiVarMi
 from utils.arrayUtils import containsInDictionaryKey
+from utils.customerUtils import try_fetch
 from utils.errorResponse import createErrorResponse
 from utils.musteri_girisi import makeArraySerializationsQuery
 from dateutil.parser import parse as dateUtilParse
@@ -88,6 +89,18 @@ class yeniMusteriGirisi(APIView):
                 [
                     "musteri_isim",
                     "musteri_soyisim",
+                    "musteri_email",
+                    "musteri_tel",
+                    "hizmet_turu",
+                    "giris_tarih",
+                    "secili_sube",
+                    "calisan"
+                ]
+                # optional fields = ucret, cikisTarihi
+            ) or containsInDictionaryKey(
+                data,
+                [
+                    "musteri_id",
                     "hizmet_turu",
                     "giris_tarih",
                     "secili_sube",
@@ -100,6 +113,17 @@ class yeniMusteriGirisi(APIView):
                     kullanici__id=int(ilgili_calisan_id),
                     sube__id=int(data.get("secili_sube"))
                     )
+
+                email, tel = "", "";
+                if ("musteri_email" in data.keys()):
+                    email = data.get("musteri_email")
+
+                if ("musteri_tel" in data.keys()):
+                    tel = data.get("musteri_tel")
+
+                musteri = try_fetch(data.get("musteri_id"), data.get("musteri_isim"),
+                                             data.get("musteri_soyisim"), email, tel)
+
                 if bulunanCalisan.count() > -1:
                     cikis_tarih = None
                     giris_tarih = dateUtilParse(data.get("giris_tarih"))
@@ -121,10 +145,7 @@ class yeniMusteriGirisi(APIView):
 
                     if request.user.is_superuser or iliski is not None:
                         musteriKayit = MusteriGirisi(
-                            musteri_isim=data.get("musteri_isim"),
-                            musteri_soyisim=data.get("musteri_soyisim"),
-                            musteri_email=email,
-                            musteri_tel=tel,
+                            musteri=musteri,
                             hizmet_turu=data.get("hizmet_turu"),
                             secili_sube=iliski.sube,
                             giris_tarih=giris_tarih,

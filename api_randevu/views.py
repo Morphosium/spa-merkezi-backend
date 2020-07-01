@@ -12,6 +12,7 @@ from cinarspa_models.models import Sube, SubeTemsilcisi, Randevu
 from datetime import datetime
 from .serializers import RandevuSerializer
 import traceback
+from utils.customerUtils import try_fetch as try_fetch_customer
 import sys
 from dateutil.parser import parse as dateUtilParse
 
@@ -65,33 +66,33 @@ class createAppointment(APIView):
     def post(self, request):
         try:
             data: dict = request.data
-            if containsInDictionaryKey(
-                    data, ["isim", "soyisim", "hizmetTipi", "subeId", "randevuTarih"]
-            ):
+            if containsInDictionaryKey(data, ["musteri_isim", "musteri_soyisim","musteri_email","musteri_tel", "hizmetTipi", "subeId", "randevuTarih"]) or \
+                    containsInDictionaryKey(data, ["musteri_id", "hizmetTipi", "subeId", "randevuTarih"]):
                 # create RANDEVU(Appointment) instance - RANDEVU örneği yaratma
                 # find SUBE (Branch) - şube arama
+
+
                 subeler = Sube.objects.filter(id=data.get("subeId"))
                 email, tel = "", "";
-                if ("musteriEmail" in data.keys()):
-                    email = data.get("musteriEmail")
+                if ("musteri_email" in data.keys()):
+                    email = data.get("musteri_email")
 
-                if ("musteriTelefon" in data.keys()):
-                    tel = data.get("musteriTelefon")
+                if ("musteri_tel" in data.keys()):
+                    tel = data.get("musteri_tel")
+
+                musteri = try_fetch_customer(data.get("musteri_id"), data.get("musteri_isim"),
+                                             data.get("musteri_soyisim"),email,tel)
 
                 if subeler.count() > 0:
                     sube = subeler[0]
                     tarih = dateUtilParse(data.get("randevuTarih"))
                     # tarih = datetime.strptime(data.get("tarih"),"%Y-%m-%dT%H:%M:%S.%Z")
+                    
                     randevu = Randevu(
                         secili_sube=sube,
                         hizmet_turu=data.get("hizmetTipi"),
                         tarih=tarih,
-                        musteri_isim=data.get("isim"),
-                        musteri_soyisim=data.get("soyisim"),
-                        musteri_email=email,
-                        musteri_tel=tel
-
-
+                        musteri=musteri
                     )
                     randevu.save()
                     return createErrorResponse(
