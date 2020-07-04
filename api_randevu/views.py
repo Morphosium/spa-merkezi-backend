@@ -127,7 +127,7 @@ class deleteAppointment(APIView):
             randevu = randevular[0] if randevular.count() > 0 else None
             if randevu is not None:
                 iliski = iliskiVarMi(request.user, randevu.secili_sube.id)
-                if iliski is not None:
+                if iliski is not None or request.user.is_superuser:
                     randevu.delete()
                     return Response({"message": "Appointment deleted"}, 200)
                 else:

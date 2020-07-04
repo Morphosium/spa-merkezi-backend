@@ -12,6 +12,7 @@ class RandevuSerializer(serializers.ModelSerializer):
     class Meta:
         model = Randevu
         fields = [
+            'id',
             'musteri',
             'hizmet_turu',
             'tarih',
