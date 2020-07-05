@@ -41,7 +41,7 @@ class musteriGirisleri(APIView):
         if request.query_params.get("sadece-cikmayanlar") == "1":
             sadeceCikmayanlar = True
 
-        subeId: str = request.query_params.get("sube")
+        subeId: str = request.query_params.get("sube-id")
         if (
             subeId != ""
             and subeId is not None
@@ -53,9 +53,15 @@ class musteriGirisleri(APIView):
         if sadeceCikmayanlar:
             customersQ = customersQ.filter(cikis_tarih__isnull=True)
         relations = iliskiliSubeler(request.user)
+        # admin control
         if request.user.is_superuser:
-            customerEntries = customersQ.all()
+            customerEntries = None
+            if subeFiltre == -1:
+                customerEntries = MusteriGirisi.objects.all()
+            else:
+                customerEntries = MusteriGirisi.objects.filter(secili_sube__id=subeFiltre)
             return Response(makeArraySerializationsQuery(customerEntries))
+        # if not admin but staff
         elif request.user.is_staff:
             if subeFiltre > -1:
                 iliskiliSube = iliskiVarMi(request.user, subeFiltre, relations)
@@ -137,6 +143,14 @@ class yeniMusteriGirisi(APIView):
                         tel = data.get("musteri_tel")
 
                     ucret = data.get("ucret")
+                    prim = data.get("prim")
+                    calisan = None
+                    calisanId = data.get("calisan")
+                    if calisanId is not None and calisanId.is_numeric:
+                        calisan = User.objects.filter(id=int(calisanId))
+
+                    if (calisan is None):
+                        calisan = request.user
 
                     if data.get("cikis_tarih") is not None:
                         cikis_tarih = dateUtilParse(data.get("cikis_tarih"))
@@ -151,7 +165,8 @@ class yeniMusteriGirisi(APIView):
                             giris_tarih=giris_tarih,
                             cikis_tarih=cikis_tarih,
                             ucret=ucret if ucret is not None else 0,
-                            calisan=request.user,
+                            calisan=calisan,
+                            prim=prim
                         )
                         musteriKayit.save()
                         return createErrorResponse(
