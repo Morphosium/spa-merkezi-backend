@@ -7,7 +7,8 @@ from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
 from api_gelir.serializers import MusteriGirisiSerializer
-from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi
+from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi, Musteri
+from cinarspa_models.serializers import MusteriSerializer
 from utils import SubeIliskileri
 from utils.SubeIliskileri import iliskiliSubeler, iliskiVarMi
 from utils.arrayUtils import containsInDictionaryKey
@@ -80,6 +81,39 @@ class musteriGirisleri(APIView):
                 customerEntries = customersQ.filter(secili_sube__in=relations)
                 return Response(makeArraySerializationsQuery(customerEntries.all()))
 
+class musteriler(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+    """Müşteri girişlerini getirmek için kullanılır
+        query parametreleri
+        - sadece-cikmayanlar = 1 ise çıkış tarihi null olanlar döner
+        - sube = int şeklinde şube id girilir. Eğer yetki yoksa 403-YASSAH kodu döner
+    """
+
+    def get(self, request: Request):
+        subeFiltre=None
+        subeId: str = request.query_params.get("sube-id")
+        if (
+            subeId != ""
+            and subeId is not None
+            and re.match("^([0-9].*)$", subeId) is not None
+        ):
+            subeFiltre = int(subeId)
+            temsil = iliskiVarMi(request.user, subeFiltre)
+            if request.user.is_superuser or temsil is not None:
+                rd = []
+                musteriler = Musteri.objects.filter(id__in=MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).values_list('musteri', flat=True))
+                for musteri in musteriler:
+                    rd.append(MusteriSerializer(musteri).data)
+                return Response(rd)
+            else:
+                return createErrorResponse(404, {"message": "Sube is not found"})
+        else:
+            return createErrorResponse(400, {"message": "Sube id is invalid"})
+
+
+
 
 class yeniMusteriGirisi(APIView):
     permission_classes = [
@@ -146,7 +180,7 @@ class yeniMusteriGirisi(APIView):
                     prim = data.get("prim")
                     calisan = None
                     calisanId = data.get("calisan")
-                    if calisanId is not None and calisanId.is_numeric:
+                    if calisanId is not None and calisanId.isnumeric():
                         calisan = User.objects.filter(id=int(calisanId))
 
                     if (calisan is None):
@@ -157,6 +191,8 @@ class yeniMusteriGirisi(APIView):
 
                     iliski = iliskiVarMi(request.user, data.get("secili_sube"))
 
+                    calisanIliski = SubeTemsilcisi.objects.filter(kullanici__id=calisan, sube__id=data.get("secili_sube"))[0].sube
+
                     if request.user.is_superuser or iliski is not None:
                         musteriKayit = MusteriGirisi(
                             musteri=musteri,
@@ -165,7 +201,7 @@ class yeniMusteriGirisi(APIView):
                             giris_tarih=giris_tarih,
                             cikis_tarih=cikis_tarih,
                             ucret=ucret if ucret is not None else 0,
-                            calisan=calisan,
+                            calisan__id=calisan,
                             prim=prim
                         )
                         musteriKayit.save()
@@ -191,6 +227,48 @@ class yeniMusteriGirisi(APIView):
                                     "subeId" (branch identify),"tarih" (date with hours) fields """
                     },
                 )  #
+
+        except Exception as exception:
+            traceback.print_exc()
+            return createErrorResponse(500, {"error": str(exception.__class__)})
+
+class girisiDuzenle(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request):
+      
+        try:
+            upd = {}
+            if "id" in request.data.keys() and \
+                   (request.user.is_superuser or SubeTemsilcisi.objects.filter(kullanici=request.user,
+                                                 sube__id__in=MusteriGirisi.objects.
+                                                         filter(id=request.data["id"]).
+                                                        values_list("secili_sube", flat=True))):
+                data = request.data
+
+                if data.get("cikis_tarih") is not None:
+                    upd["cikis_tarih"] = dateUtilParse(data.get("cikis_tarih"))
+
+                if data.get("giris_tarih") is not None:
+                    upd["giris_tarih"] = dateUtilParse(data.get("giris_tarih"))
+
+                if data.get("hizmet_turu") is not None:
+                    upd["hizmet_turu"] = data.get("hizmet_turu")
+
+                if data.get("prim") is not None:
+                    upd["prim"] = data.get("prim")
+
+                if data.get("calisan") is not None:
+                    upd["calisan"] = User.objects.filter(id=int(data.get("calisan")))
+
+                MusteriGirisi.objects.filter(id=request.data["id"]).update(**upd)
+                return Response({"message": "Record updated"})
+
+
+            else:
+                return createErrorResponse(404, {"message": "Not found"})
 
         except Exception as exception:
             traceback.print_exc()
