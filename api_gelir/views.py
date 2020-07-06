@@ -248,10 +248,10 @@ class girisiDuzenle(APIView):
                                                         values_list("secili_sube", flat=True))):
                 data = request.data
 
-                if data.get("cikis_tarih") is not None:
+                if data.get("cikis_tarih") is not None or data.get("cikis_tarih") != "":
                     upd["cikis_tarih"] = dateUtilParse(data.get("cikis_tarih"))
 
-                if data.get("giris_tarih") is not None:
+                if data.get("giris_tarih") is not None or data.get("giris_tarih") != "":
                     upd["giris_tarih"] = dateUtilParse(data.get("giris_tarih"))
 
                 if data.get("hizmet_turu") is not None:
@@ -261,9 +261,13 @@ class girisiDuzenle(APIView):
                     upd["prim"] = data.get("prim")
 
                 if data.get("calisan") is not None:
-                    upd["calisan"] = User.objects.filter(id=int(data.get("calisan")))
+                    upd["calisan"] = User.objects.filter(id=int(data.get("calisan")))[0]
 
-                MusteriGirisi.objects.filter(id=request.data["id"]).update(**upd)
+                recordId = int(request.data["id"])
+                kayit = MusteriGirisi.objects.filter(id=recordId).all()[0]
+                for key in upd.keys():
+                    setattr(kayit,key, upd[key])
+                kayit.save()
                 return Response({"message": "Record updated"})
 
 
