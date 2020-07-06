@@ -257,6 +257,9 @@ class girisiDuzenle(APIView):
                 if data.get("hizmet_turu") is not None:
                     upd["hizmet_turu"] = data.get("hizmet_turu")
 
+                if data.get("ucret") is not None:
+                    upd["ucret"] = data.get("ucret")
+
                 if data.get("prim") is not None:
                     upd["prim"] = data.get("prim")
 
