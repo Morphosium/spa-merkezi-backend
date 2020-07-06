@@ -191,7 +191,7 @@ class yeniMusteriGirisi(APIView):
 
                     iliski = iliskiVarMi(request.user, data.get("secili_sube"))
 
-                    calisanIliski = SubeTemsilcisi.objects.filter(kullanici__id=calisan, sube__id=data.get("secili_sube"))[0].sube
+                    calisanIliski = SubeTemsilcisi.objects.filter(kullanici=calisan[0], sube=data.get("secili_sube"))[0]
 
                     if request.user.is_superuser or iliski is not None:
                         musteriKayit = MusteriGirisi(
@@ -201,7 +201,7 @@ class yeniMusteriGirisi(APIView):
                             giris_tarih=giris_tarih,
                             cikis_tarih=cikis_tarih,
                             ucret=ucret if ucret is not None else 0,
-                            calisan__id=calisan,
+                            calisan=calisanIliski.kullanici,
                             prim=prim
                         )
                         musteriKayit.save()
@@ -238,7 +238,7 @@ class girisiDuzenle(APIView):
     ]
 
     def post(self, request):
-      
+
         try:
             upd = {}
             if "id" in request.data.keys() and \
