@@ -15,7 +15,9 @@ from utils.arrayUtils import containsInDictionaryKey
 from utils.customerUtils import try_fetch
 from utils.errorResponse import createErrorResponse
 from utils.musteri_girisi import makeArraySerializationsQuery
+from utils.pagination import pagination
 from dateutil.parser import parse as dateUtilParse
+
 import re
 
 
@@ -26,6 +28,7 @@ class musteriGirisleri(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
+
     """Müşteri girişlerini getirmek için kullanılır
         query parametreleri
         - sadece-cikmayanlar = 1 ise çıkış tarihi null olanlar döner
@@ -35,6 +38,8 @@ class musteriGirisleri(APIView):
     def get(self, request: Request):
         """@sadeceCikmayanlar çıkış tarihi eklenmemiş kayıtları gösterir
            @subeFiltre"""
+
+
 
         sadeceCikmayanlar = False
         subeFiltre = -1
@@ -58,17 +63,20 @@ class musteriGirisleri(APIView):
         if request.user.is_superuser:
             customerEntries = None
             if subeFiltre == -1:
-                customerEntries = MusteriGirisi.objects.all()
+                customerEntries = MusteriGirisi.objects.order_by("-id").all()
             else:
-                customerEntries = MusteriGirisi.objects.filter(secili_sube__id=subeFiltre)
-            return Response(makeArraySerializationsQuery(customerEntries))
+                customerEntries = MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).order_by("-id")
+            paginated = pagination(customerEntries, request.query_params.get("page"), request.query_params.get("size"))
+            return Response(makeArraySerializationsQuery(paginated))
         # if not admin but staff
         elif request.user.is_staff:
             if subeFiltre > -1:
                 iliskiliSube = iliskiVarMi(request.user, subeFiltre, relations)
                 if iliskiliSube is not None:
-                    customerEntries = customersQ.filter(secili_sube=iliskiliSube).all()
-                    return Response(makeArraySerializationsQuery(customerEntries))
+                    customerEntries = customersQ.filter(secili_sube=iliskiliSube).order_by("-id")
+                    paginated = pagination(customerEntries, request.query_params.get("page"),
+                                           request.query_params.get("size"))
+                    return Response(makeArraySerializationsQuery(paginated))
                 else:
                     return createErrorResponse(
                         403,
@@ -78,7 +86,7 @@ class musteriGirisleri(APIView):
                         },
                     )
             else:
-                customerEntries = customersQ.filter(secili_sube__in=relations)
+                customerEntries = customersQ.filter(secili_sube__in=relations).order_by("-id")
                 return Response(makeArraySerializationsQuery(customerEntries.all()))
 
 class musteriler(APIView):
@@ -111,9 +119,6 @@ class musteriler(APIView):
                 return createErrorResponse(404, {"message": "Sube is not found"})
         else:
             return createErrorResponse(400, {"message": "Sube id is invalid"})
-
-
-
 
 class yeniMusteriGirisi(APIView):
     permission_classes = [
@@ -281,11 +286,11 @@ class girisiDuzenle(APIView):
             traceback.print_exc()
             return createErrorResponse(500, {"error": str(exception.__class__)})
 
-
 class musteriCikisi(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
+
     def post(self, request : Request):
         try:
             q = request.data
@@ -314,3 +319,27 @@ class musteriCikisi(APIView):
         except Exception as exception:
             traceback.print_exc()
             return createErrorResponse(500, {"error": str(exception.__class__)})
+
+class musteriGirisiSil(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request : Request):
+        kayit_id = request.query_params.get("kayit_id")
+        if (kayit_id is not None and kayit_id.isnumeric()):
+            kayit  = MusteriGirisi.objects.filter(id=int(kayit_id))
+            if (kayit.count() > 0):
+                kayit_ : MusteriGirisi = kayit[0]
+                temsil = SubeTemsilcisi.objects.filter(kullanici=request.user, sube=kayit_.secili_sube)
+                if request.user.is_superuser or temsil.count() > 0:
+                    kayit_.delete()
+                    return createErrorResponse(200, {"message": "Kayit silindi"})
+                else:
+                    return createErrorResponse(403, {"message": "İzin bulunamadı"})
+            else:
+                return createErrorResponse(401, {"message": "Kayit bulunamadı"})
+        else:
+            return createErrorResponse(401,{"message": "Kayit bulunamadı"})
+
+
