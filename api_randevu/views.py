@@ -15,7 +15,7 @@ import traceback
 from utils.customerUtils import try_fetch as try_fetch_customer
 import sys
 from dateutil.parser import parse as dateUtilParse
-
+from utils.pagination import pagination
 
 # Create your views here.
 
@@ -34,24 +34,32 @@ class fetchAuthorizedAppointments(APIView):
             subeId: str = request.query_params.get("sube-id")
             if request.user.is_superuser:
                 if subeId is not None and subeId.isnumeric():
-                    query = Randevu.objects.filter(secili_sube__id=int(subeId))
-                    return Response(self.__convertAppointments(query.all()))
+                    query = Randevu.objects.filter(secili_sube__id=int(subeId)).order_by("-id")
+                    paginated = pagination(query, request.query_params.get("page"), request.query_params.get("size"));
+                    return Response(self.__convertAppointments(paginated))
                 else:
-                    return Response(self.__convertAppointments(Randevu.objects.all()))
+                    paginated = pagination(Randevu.objects.order_by("-id"), request.query_params.get("page"),
+                                           request.query_params.get("size")).order_by("-id")
+                    return Response(self.__convertAppointments(paginated))
 
             else:
                 query = Randevu.objects
                 if subeId is not None and subeId.isnumeric():
                     temsil = iliskiVarMi(request.user, int(subeId))
                     if temsil is not None:
-                        query = query.filter(secili_sube=temsil.sube)
-                        return Response(self.__convertAppointments(query.all()))
+
+                        query = query.filter(secili_sube=temsil.sube).order_by("-id")
+                        paginated = pagination(query, request.query_params.get("page"),
+                                               request.query_params.get("size"))
+                        return Response(self.__convertAppointments(paginated))
                     else:
                         return createErrorResponse(403, {"message": "You aren't authenticated with this branch"})
                 else:
                     iliskiliBranchler = iliskiliSubeler(request.user)
-                    query = Randevu.objects.filter(secili_sube__in=iliskiliBranchler)
-                    return Response(self.__convertAppointments(query.all()))
+                    query = Randevu.objects.filter(secili_sube__in=iliskiliBranchler).order_by("-id")
+                    paginated = pagination(query, request.query_params.get("page"),
+                                           request.query_params.get("size"))
+                    return Response(self.__convertAppointments(paginated))
 
 
 
