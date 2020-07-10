@@ -1,6 +1,9 @@
 import traceback
 
+from django.db.models import Q
+from django.db.models.sql import Query
 from django.shortcuts import render
+from django.db.models import Sum
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
@@ -17,7 +20,7 @@ from utils.errorResponse import createErrorResponse
 from utils.musteri_girisi import makeArraySerializationsQuery
 from utils.pagination import pagination
 from dateutil.parser import parse as dateUtilParse
-
+import datetime
 import re
 
 
@@ -342,4 +345,44 @@ class musteriGirisiSil(APIView):
         else:
             return createErrorResponse(401,{"message": "Kayit bulunamadı"})
 
+class monthlyReport(APIView):
+     permission_classes = [
+         IsAuthenticated,
+     ]
+     def get(self, request: Request):
+         subeid_ = request.query_params.get("sube")
+         if subeid_ and subeid_.isnumeric():
+            subeid = int(subeid_)
+            iliskiler = SubeTemsilcisi.objects.filter(sube__id=subeid, kullanici=request.user)
+            iliski = iliskiler[0] if iliskiler.count() > 0 else None
+            if request.user.is_superuser or iliski is not None:
+                aylik_toplam_gelir = 0
+                aylik_toplam_prim = 0
+                calisan_primler = None
+                if request.user.is_superuser or iliski.ustduzey_hak is True:
+                    calisan_primler = {}
 
+                bugun = datetime.date.today()
+                aylik_kayitlar = MusteriGirisi.objects.filter(secili_sube__id=subeid, giris_tarih__month=bugun.month,
+                                                              giris_tarih__year=bugun.year)
+
+                for kayit in aylik_kayitlar:
+                    aylik_toplam_prim += kayit.prim
+                    aylik_toplam_gelir += kayit.ucret
+                    if request.user.is_superuser or iliski.ustduzey_hak is True:
+                        if kayit.calisan.id in calisan_primler.keys() is True:
+                            calisan_primler[kayit.calisan.id] += kayit.prim
+                        else:
+                            calisan_primler[kayit.calisan.id] = kayit.prim
+
+                return Response({
+                    "summary": {
+                        "income": aylik_toplam_gelir,
+                        "expense": aylik_toplam_prim
+                    },
+                    "bonuses": calisan_primler
+                })
+            else:
+                return createErrorResponse(403, {"message" : "Not authorized for branch"})
+         else:
+             return createErrorResponse(400,{"message": "Branch is not provided"})

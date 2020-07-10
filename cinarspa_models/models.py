@@ -17,6 +17,7 @@ class Sube(models.Model):
 class SubeTemsilcisi(models.Model):
     sube = models.ForeignKey(Sube, on_delete=models.CASCADE)
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,)
+    ustduzey_hak = models.BooleanField(default=False)
 
     def __str__(self):
         return self.sube.sube_ismi + " => " + self.kullanici.username
