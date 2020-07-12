@@ -82,7 +82,7 @@ class createUser(APIView):
 
 
 class getBranches(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def __hak(self, user, temsil):
         if user.is_superuser:
@@ -92,6 +92,15 @@ class getBranches(APIView):
 
 
     def get(self, request):
+        if request.user.is_anonymous or request.user.is_authenticated is False:
+            subeler = Sube.objects.all()
+            ls = [{
+                "id": sube.id,
+                "name": sube.sube_ismi,
+                "address": sube.adres
+            } for sube in subeler]
+
+            return Response(ls)
         if request.user.is_superuser:
             subeler = Sube.objects.all()
             ls = [{
