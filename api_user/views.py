@@ -30,6 +30,9 @@ class createUser(APIView):
 
     def post(self, request):
         try:
+
+            ustDuzeyHak = request.data["highlevelRight"]
+
             subeId = request.data["subeId"] if "subeId" in request.data else -1
             arananSube = None
             if subeId == -1:
@@ -39,11 +42,14 @@ class createUser(APIView):
                 if arananSube is None:
                     return createErrorResponse(404, {"message": "Branch not found"})
 
-            if request.user.is_staff:
+            stFilter = ""
+            if request.user.is_superuser:
+                stFilter = SubeTemsilcisi.objects.filter(sube__id=subeId)[0]
+            elif request.user.is_staff:
                 kul_id = request.user.id
                 stFilter = SubeTemsilcisi.objects.filter(sube__id=subeId, kullanici__id=kul_id)[0]
-            elif request.user.is_superuser:
-                stFilter = SubeTemsilcisi.objects.filter(sube__id=subeId)[0]
+                if stFilter is None or stFilter.ustduzey_hak is False:
+                    ustDuzeyHak = False
 
             serialized = UserSerializer(data=request.data)
 
@@ -54,12 +60,15 @@ class createUser(APIView):
                         email=request.data['email'],
                         username=request.data['username'],
                         password=request.data['password'],
+                        first_name=request.data['firstname'],
+                        last_name=request.data['lastname'],
                         is_staff=True
                     )
                     createdUser.save()
                     yeniSubeIliskisi = SubeTemsilcisi(
                         sube=stFilter.sube,
-                        kullanici=createdUser
+                        kullanici=createdUser,
+                        ustduzey_hak=ustDuzeyHak
                     )
                     yeniSubeIliskisi.save()
                     return Response(serialized.data, status=status.HTTP_201_CREATED)
@@ -75,16 +84,36 @@ class createUser(APIView):
 class getBranches(APIView):
     permission_classes = [IsAuthenticated]
 
+    def __hak(self, user, temsil):
+        if user.is_superuser:
+            return True
+        else:
+            return temsil.ustduzey_hak
+
+
     def get(self, request):
         if request.user.is_superuser:
             subeler = Sube.objects.all()
+            ls = [{
+                "id": sube.id,
+                "name": sube.sube_ismi,
+                "address": sube.adres,
+                "highLevelAuthLoggedUser": True
+            } for sube in subeler]
+
+            return Response(ls)
+
         elif request.user.is_staff:
-            subeler = iliskiliSubeler(request.user)
+            temsiller = [temsil for temsil in SubeTemsilcisi.objects.filter(kullanici=request.user)]
+            ls = [{
+                "id": temsil.sube.id,
+                "name": temsil.sube.sube_ismi,
+                "address": temsil.sube.adres,
+                "highLevelAuthLoggedUser": self.__hak(request.user, temsil)
+            } for temsil in temsiller]
 
-        ls = [{"id": sube.id, "name": sube.sube_ismi, "address": sube.adres}
-              for sube in subeler]
+            return Response(ls)
 
-        return Response(ls)
 
 
 class getStaffsInBranch(APIView):
@@ -113,3 +142,5 @@ class getStaffsInBranch(APIView):
                 iliskiler = SubeTemsilcisi.objects.filter(sube__in=subeler)
                 calisanlar_parsed = [self.__combineTemsil(iliski) for iliski in iliskiler]
                 return createErrorResponse(202, calisanlar_parsed)
+
+
