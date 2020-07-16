@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import Group, User
 from django.conf import settings
 
-
 class Sube(models.Model):
     adres = models.CharField(max_length=300)
     sube_ismi = models.CharField(max_length=100)
@@ -26,7 +25,6 @@ class SubeTemsilcisi(models.Model):
         verbose_name = "Şube temsilcisi"
         verbose_name_plural = "Şube temsilcileri"
 
-
 class Musteri(models.Model):
     isim = models.CharField(max_length=30)
     soyisim = models.CharField(max_length=30)
@@ -40,7 +38,6 @@ class Musteri(models.Model):
         verbose_name = "Müşteri"
         verbose_name_plural = "Müşteriler"
 
-# Create your models here.
 class Randevu(models.Model):
     musteri = models.ForeignKey("cinarspa_models.Musteri", on_delete=models.CASCADE)
     secili_sube = models.ForeignKey("cinarspa_models.Sube", on_delete=models.CASCADE)
@@ -58,7 +55,6 @@ class Randevu(models.Model):
     class Meta:
         verbose_name_plural = "Randevular"
 
-
 class MusteriGirisi(models.Model):
     musteri = models.ForeignKey("cinarspa_models.Musteri", on_delete=models.CASCADE)
     hizmet_turu = models.CharField(max_length=30)
@@ -71,3 +67,11 @@ class MusteriGirisi(models.Model):
     class Meta:
         verbose_name = "Müşteri Girişi"
         verbose_name_plural = "Müşteri girişleri"
+
+class EkstraGider(models.Model):
+    sube = models.ForeignKey(Sube, on_delete=models.CASCADE)
+    baslik = models.CharField(max_length=30)
+    detay = models.CharField(max_length=600)
+    tur = models.CharField(max_length=30)
+    tarih = models.DateTimeField()
+    tutar = models.IntegerField()
