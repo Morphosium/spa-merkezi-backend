@@ -41,12 +41,13 @@ def _generic_control(request) -> (bool, Response):
 class ExtraExpensesMonthly(APIView):
     authentication_classes = [IsAuthenticated]
 
-    def get(self, request: Request):
+    def get(self, request: Request, sube : int):
 
         flag, errorResponse = _generic_control(request)
         if flag:
             date_ = request.query_params["date"]
-            sube = int(request.query_params["sube_id"])
+            if sube is None:
+                sube = int(request.query_params["sube_id"])
             expenses = extra_expenses(request.user, sube)
             paginated_expenses = pagination(expenses, request.query_params.get("page"),
                                             request.query_params.get("size"))
@@ -71,3 +72,27 @@ class AddExpense(APIView):
                 return createErrorResponse(400, {"errors": parsedThing.errors, "message": "Required fields are missing"})
         else:
             return error_response
+
+class RemoveExpense(APIView):
+    authentication_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.query_params["gider_id"] is not None and request.query_params["gider_id"].isnumeric():
+            gider_id = int(request.query_params["gider_id"])
+            giderler = EkstraGider.objects.filter(id=gider_id)
+            if giderler.count() > 0:
+                gider  : EkstraGider = giderler[0]
+                giderSube = gider.sube.id
+                flag, err_response = _generic_control(request, giderSube)
+                if flag:
+                    gider.delete()
+                    return createErrorResponse(200, {"message": "Expense record is removed"})
+                else:
+                    return err_response
+            else:
+                return createErrorResponse(404, {"message": "Expense not found"})
+        else:
+            return createErrorResponse(400, {"message": "Expense not provided properly"})
+            # bad request
+
+
