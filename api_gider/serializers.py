@@ -13,5 +13,5 @@ class EkstraGiderSerializer(serializers.ModelSerializer):
     class Meta:
         model = EkstraGider
         fields = [
-            "baslik", "detay", "tur", "tarih", "tutar"
+            "baslik", "detay", "tur", "tarih", "tutar", "sube", "id"
         ]

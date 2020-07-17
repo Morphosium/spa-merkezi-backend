@@ -23,9 +23,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = "uj+b76#q2#w46_tp8!1^+5q(ub(6xi&9b(!7#hq%-jg_*fa0ur"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ["cinarspa.net", "panel.cinarspa.net", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["cinarspa.net",
+                 "panel.cinarspa.net",
+                 "127.0.0.1", "localhost"]
 
 # Application definition
 

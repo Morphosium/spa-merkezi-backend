@@ -21,6 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-user/', include("api_user.urls")),
     path('api-randevu/', include("api_randevu.urls")),
-    path('api-gelir/', include("api_gelir.urls"))
+    path('api-gelir/', include("api_gelir.urls")),
+    path('api-gider/', include("api_gider.urls"))
 ]
 

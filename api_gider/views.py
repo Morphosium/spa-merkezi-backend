@@ -1,26 +1,29 @@
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
+
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from dateutil.parser import parse
 
 from api_gider.serializers import EkstraGiderSerializer
-from cinarspa_models.models import EkstraGider
+from cinarspa_models.models import EkstraGider, Sube
 from utils.ExtraExpenses import extra_expenses
 from utils.SubeIliskileri import iliskiVarMi
 from utils.errorResponse import createErrorResponse
 from utils.pagination import pagination
 
 
-def _generic_control(request) -> (bool, Response):
+def _generic_control(request, subePreprovide=None) -> (bool, Response):
     """Controls is branch provided and is user any privaliges
     Return 1: when controlling if has a issue, return false. Else then, it is true
     Return 2: If has issue, response will be returned. But there is no issue, nothing returned"""
-    date_ = request.query_params["date"]
-    sube_: str = request.query_params["sube_id"]
-    date = parse(date_)
-    if sube_.isnumeric():
+    sube_ = ""
+    if subePreprovide is None:
+        sube_: str = request.query_params["sube_id"]
+    else:
+        sube_ = subePreprovide
+    if type(sube_) is int or sube_.isnumeric():
         sube = int(sube_)
         flag = False
         if (request.user.is_superuser):
@@ -39,16 +42,14 @@ def _generic_control(request) -> (bool, Response):
 
 
 class ExtraExpensesMonthly(APIView):
-    authentication_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, sube : int):
-
+    def get(self, request: Request):
         flag, errorResponse = _generic_control(request)
         if flag:
             date_ = request.query_params["date"]
-            if sube is None:
-                sube = int(request.query_params["sube_id"])
-            expenses = extra_expenses(request.user, sube)
+            sube = int(request.query_params["sube_id"])
+            expenses = extra_expenses(sube, date_)
             paginated_expenses = pagination(expenses, request.query_params.get("page"),
                                             request.query_params.get("size"))
             return createErrorResponse(200, paginated_expenses)
@@ -56,14 +57,20 @@ class ExtraExpensesMonthly(APIView):
             return errorResponse
 
 class AddExpense(APIView):
-    authentication_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         flag, error_response = _generic_control(request)
         if flag:
-            parsedThing = EkstraGiderSerializer(source=request.data)
+            copied = request.data.copy()
+            sube_id = copied["sube"]
+
+            sube = Sube.objects.filter(id=sube_id)[0]
+            copied["sube"] = {"id": sube_id, "adres": "asdasd", "sube_ismi": "sasdas"}
+            parsedThing = EkstraGiderSerializer(data=copied)
             if parsedThing.is_valid():
-                yeniGider = EkstraGider(**request.data)
+                copied["sube"] = sube
+                yeniGider = EkstraGider(**copied)
                 yeniGider.save()
                 return createErrorResponse(201, {"message": "Expense created successfully",
                                                  "object": EkstraGiderSerializer(yeniGider).data}
@@ -74,9 +81,9 @@ class AddExpense(APIView):
             return error_response
 
 class RemoveExpense(APIView):
-    authentication_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         if request.query_params["gider_id"] is not None and request.query_params["gider_id"].isnumeric():
             gider_id = int(request.query_params["gider_id"])
             giderler = EkstraGider.objects.filter(id=gider_id)
