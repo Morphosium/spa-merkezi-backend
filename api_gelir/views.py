@@ -13,6 +13,7 @@ from api_gelir.serializers import MusteriGirisiSerializer
 from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi, Musteri
 from cinarspa_models.serializers import MusteriSerializer
 from utils import SubeIliskileri
+from utils.ExtraExpenses import extra_expenses, extra_expenses_sum
 from utils.SubeIliskileri import iliskiliSubeler, iliskiVarMi
 from utils.arrayUtils import containsInDictionaryKey
 from utils.customerUtils import try_fetch
@@ -354,17 +355,24 @@ class monthlyReport(APIView):
          if subeid_ and subeid_.isnumeric():
             subeid = int(subeid_)
             iliskiler = SubeTemsilcisi.objects.filter(sube__id=subeid, kullanici=request.user)
+
             iliski = iliskiler[0] if iliskiler.count() > 0 else None
             if request.user.is_superuser or iliski is not None:
                 aylik_toplam_gelir = 0
                 aylik_toplam_prim = 0
+                bugun = datetime.date.today()
+                gidertoplam = extra_expenses_sum(subeid, bugun)["tutar__sum"]
+                if gidertoplam is None:
+                    gidertoplam = 0
                 calisan_primler = None
                 if request.user.is_superuser or iliski.ustduzey_hak is True:
                     calisan_primler = {}
 
-                bugun = datetime.date.today()
-                aylik_kayitlar = MusteriGirisi.objects.filter(secili_sube__id=subeid, giris_tarih__month=bugun.month,
-                                                              giris_tarih__year=bugun.year)
+
+                aylik_kayitlar = MusteriGirisi.objects.filter(
+                    secili_sube__id=subeid,
+                    giris_tarih__month=bugun.month,
+                    giris_tarih__year=bugun.year)
 
                 for kayit in aylik_kayitlar:
                     aylik_toplam_prim += kayit.prim
@@ -378,11 +386,14 @@ class monthlyReport(APIView):
                 return Response({
                     "summary": {
                         "income": aylik_toplam_gelir,
-                        "expense": aylik_toplam_prim
+                        "bonus_grand": aylik_toplam_prim,
+                        "extra_expenses": gidertoplam,
+                        "grand_expenses": aylik_toplam_prim + gidertoplam
                     },
-                    "bonuses": calisan_primler
+                    "bonuses": calisan_primler,
+
                 })
             else:
-                return createErrorResponse(403, {"message" : "Not authorized for branch"})
+                return createErrorResponse(403, {"message": "Not authorized for branch"})
          else:
              return createErrorResponse(400,{"message": "Branch is not provided"})

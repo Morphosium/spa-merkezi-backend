@@ -1,0 +1,7 @@
+Django==3.0.7
+django-cors-headers==3.4.0
+django-filter==2.3.0
+djangorestframework==3.11.0
+djangorestframework-jwt==1.11.0
+python-dateutil==2.7.3
+Markdown==3.2.2

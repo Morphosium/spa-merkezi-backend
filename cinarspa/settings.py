@@ -23,9 +23,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = "uj+b76#q2#w46_tp8!1^+5q(ub(6xi&9b(!7#hq%-jg_*fa0ur"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["cinarspa.net",
+                 "panel.cinarspa.net",
+                 "127.0.0.1", "localhost"]
 
 # Application definition
 
@@ -109,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "tr-tr"
 
 TIME_ZONE = "UTC"
 
@@ -122,8 +124,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = "/static/"
-
+STATIC_URL = "/admin-panel/"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "frontend_app")
+]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
