@@ -378,7 +378,7 @@ class monthlyReport(APIView):
                     aylik_toplam_prim += kayit.prim
                     aylik_toplam_gelir += kayit.ucret
                     if request.user.is_superuser or iliski.ustduzey_hak is True:
-                        if kayit.calisan.id in calisan_primler.keys() is True:
+                        if kayit.calisan.id in calisan_primler.keys():
                             calisan_primler[kayit.calisan.id] += kayit.prim
                         else:
                             calisan_primler[kayit.calisan.id] = kayit.prim
