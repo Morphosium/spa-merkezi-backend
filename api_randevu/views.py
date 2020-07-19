@@ -74,7 +74,12 @@ class createAppointment(APIView):
     def post(self, request):
         try:
             data: dict = request.data
-            if containsInDictionaryKey(data, ["musteri_isim", "musteri_soyisim","musteri_email","musteri_tel", "hizmetTipi", "subeId", "randevuTarih"]) or \
+            if containsInDictionaryKey(data, ["musteri_isim",
+                                              "musteri_soyisim",
+                                              "musteri_tel",
+                                              "hizmetTipi",
+                                              "subeId",
+                                              "randevuTarih"]) or \
                     containsInDictionaryKey(data, ["musteri_id", "hizmetTipi", "subeId", "randevuTarih"]):
                 # create RANDEVU(Appointment) instance - RANDEVU örneği yaratma
                 # find SUBE (Branch) - şube arama

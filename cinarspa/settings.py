@@ -26,7 +26,7 @@ SECRET_KEY = "uj+b76#q2#w46_tp8!1^+5q(ub(6xi&9b(!7#hq%-jg_*fa0ur"
 DEBUG = False
 
 ALLOWED_HOSTS = ["cinarspa.net",
-                 "panel.cinarspa.net","admin.cinarspa.net",
+                 "panel.cinarspa.net", "admin.cinarspa.net",
                  "127.0.0.1", "localhost"]
 
 # Application definition
@@ -54,7 +54,7 @@ JWT_AUTH = {
 MIDDLEWARE = [
     # CORS
 
-'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -125,9 +125,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = "/static/"
-#STATICFILES_DIRS = [
+# STATICFILES_DIRS = [
 #   os.path.join(BASE_DIR, "frontend_app")
-#]
+# ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -139,8 +139,14 @@ REST_FRAMEWORK = {
 
 
 CORS_ORIGIN_WHITELIST = [
-'http://localhost:4200',
-'http://localhost:4201',
-'http://panel.cinarspa.net',
-'https://panel.cinarspa.net'
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
+    'http://localhost:4200',
+    'http://localhost:4201',
+    'http://panel.cinarspa.net',
+    'https://panel.cinarspa.net',
+    'http://www.cinarspa.net',
+    'https://www.cinarspa.net',
+    'http://cinarspa.net',
+    'https://cinarspa.net'
 ]
