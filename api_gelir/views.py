@@ -43,8 +43,6 @@ class musteriGirisleri(APIView):
         """@sadeceCikmayanlar çıkış tarihi eklenmemiş kayıtları gösterir
            @subeFiltre"""
 
-
-
         sadeceCikmayanlar = False
         subeFiltre = -1
 
@@ -53,9 +51,9 @@ class musteriGirisleri(APIView):
 
         subeId: str = request.query_params.get("sube-id")
         if (
-            subeId != ""
-            and subeId is not None
-            and re.match("^([0-9].*)$", subeId) is not None
+                subeId != ""
+                and subeId is not None
+                and re.match("^([0-9].*)$", subeId) is not None
         ):
             subeFiltre = int(subeId)
 
@@ -86,12 +84,13 @@ class musteriGirisleri(APIView):
                         403,
                         {
                             "message": "You aren't related with ŞUBE(Branch)"
-                            + str(subeFiltre)
+                                       + str(subeFiltre)
                         },
                     )
             else:
                 customerEntries = customersQ.filter(secili_sube__in=relations).order_by("-id")
                 return Response(makeArraySerializationsQuery(customerEntries.all()))
+
 
 class musteriler(APIView):
     permission_classes = [
@@ -104,18 +103,19 @@ class musteriler(APIView):
     """
 
     def get(self, request: Request):
-        subeFiltre=None
+        subeFiltre = None
         subeId: str = request.query_params.get("sube-id")
         if (
-            subeId != ""
-            and subeId is not None
-            and re.match("^([0-9].*)$", subeId) is not None
+                subeId != ""
+                and subeId is not None
+                and re.match("^([0-9].*)$", subeId) is not None
         ):
             subeFiltre = int(subeId)
             temsil = iliskiVarMi(request.user, subeFiltre)
             if request.user.is_superuser or temsil is not None:
                 rd = []
-                musteriler = Musteri.objects.filter(id__in=MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).values_list('musteri', flat=True))
+                musteriler = Musteri.objects.filter(
+                    id__in=MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).values_list('musteri', flat=True))
                 for musteri in musteriler:
                     rd.append(MusteriSerializer(musteri).data)
                 return Response(rd)
@@ -124,28 +124,28 @@ class musteriler(APIView):
         else:
             return createErrorResponse(400, {"message": "Sube id is invalid"})
 
+
 class yeniMusteriGirisi(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
 
     def post(self, request):
-        #TODO: İlgelenen çalışan ekleme
         try:
             data: dict = request.data
             if containsInDictionaryKey(
-                data,
-                [
-                    "musteri_isim",
-                    "musteri_soyisim",
-                    "musteri_email",
-                    "musteri_tel",
-                    "hizmet_turu",
-                    "giris_tarih",
-                    "secili_sube",
-                    "calisan"
-                ]
-                # optional fields = ucret, cikisTarihi
+                    data,
+                    [
+                        "musteri_isim",
+                        "musteri_soyisim",
+                        "musteri_email",
+                        "musteri_tel",
+                        "hizmet_turu",
+                        "giris_tarih",
+                        "secili_sube",
+                        "calisan"
+                    ]
+                    # optional fields = ucret, cikisTarihi
             ) or containsInDictionaryKey(
                 data,
                 [
@@ -161,7 +161,7 @@ class yeniMusteriGirisi(APIView):
                 bulunanCalisan = SubeTemsilcisi.objects.filter(
                     kullanici__id=int(ilgili_calisan_id),
                     sube__id=int(data.get("secili_sube"))
-                    )
+                )
 
                 email, tel = "", "";
                 if ("musteri_email" in data.keys()):
@@ -171,7 +171,7 @@ class yeniMusteriGirisi(APIView):
                     tel = data.get("musteri_tel")
 
                 musteri = try_fetch(data.get("musteri_id"), data.get("musteri_isim"),
-                                             data.get("musteri_soyisim"), email, tel)
+                                    data.get("musteri_soyisim"), email, tel)
 
                 if bulunanCalisan.count() > -1:
                     cikis_tarih = None
@@ -241,6 +241,7 @@ class yeniMusteriGirisi(APIView):
             traceback.print_exc()
             return createErrorResponse(500, {"error": str(exception.__class__)})
 
+
 class girisiDuzenle(APIView):
     permission_classes = [
         IsAuthenticated,
@@ -251,10 +252,11 @@ class girisiDuzenle(APIView):
         try:
             upd = {}
             if "id" in request.data.keys() and \
-                   (request.user.is_superuser or SubeTemsilcisi.objects.filter(kullanici=request.user,
-                                                 sube__id__in=MusteriGirisi.objects.
-                                                         filter(id=request.data["id"]).
-                                                        values_list("secili_sube", flat=True))):
+                    (request.user.is_superuser or SubeTemsilcisi.objects.filter(kullanici=request.user,
+                                                                                sube__id__in=MusteriGirisi.objects.
+                                                                                        filter(id=request.data["id"]).
+                                                                                        values_list("secili_sube",
+                                                                                                    flat=True))):
                 data = request.data
 
                 if data.get("cikis_tarih") is not None or data.get("cikis_tarih") != "":
@@ -278,7 +280,7 @@ class girisiDuzenle(APIView):
                 recordId = int(request.data["id"])
                 kayit = MusteriGirisi.objects.filter(id=recordId).all()[0]
                 for key in upd.keys():
-                    setattr(kayit,key, upd[key])
+                    setattr(kayit, key, upd[key])
                 kayit.save()
                 return Response({"message": "Record updated"})
 
@@ -290,12 +292,13 @@ class girisiDuzenle(APIView):
             traceback.print_exc()
             return createErrorResponse(500, {"error": str(exception.__class__)})
 
+
 class musteriCikisi(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
 
-    def post(self, request : Request):
+    def post(self, request: Request):
         try:
             q = request.data
             kayitId = q.get("kayit_id")
@@ -305,7 +308,7 @@ class musteriCikisi(APIView):
                     giris: MusteriGirisi = girisler[0]
                     sube = iliskiVarMi(request.user, giris.secili_sube.id)
                     if request.user.is_superuser or sube is not None:
-                        if containsInDictionaryKey(q,[
+                        if containsInDictionaryKey(q, [
                             "cikis_tarih", "ucret"
                         ]):
                             cikis_tarih = dateUtilParse(q.get("cikis_tarih"))
@@ -324,17 +327,18 @@ class musteriCikisi(APIView):
             traceback.print_exc()
             return createErrorResponse(500, {"error": str(exception.__class__)})
 
+
 class musteriGirisiSil(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
 
-    def get(self, request : Request):
+    def get(self, request: Request):
         kayit_id = request.query_params.get("kayit_id")
         if (kayit_id is not None and kayit_id.isnumeric()):
-            kayit  = MusteriGirisi.objects.filter(id=int(kayit_id))
+            kayit = MusteriGirisi.objects.filter(id=int(kayit_id))
             if (kayit.count() > 0):
-                kayit_ : MusteriGirisi = kayit[0]
+                kayit_: MusteriGirisi = kayit[0]
                 temsil = SubeTemsilcisi.objects.filter(kullanici=request.user, sube=kayit_.secili_sube)
                 if request.user.is_superuser or temsil.count() > 0:
                     kayit_.delete()
@@ -344,56 +348,78 @@ class musteriGirisiSil(APIView):
             else:
                 return createErrorResponse(401, {"message": "Kayit bulunamadı"})
         else:
-            return createErrorResponse(401,{"message": "Kayit bulunamadı"})
+            return createErrorResponse(401, {"message": "Kayit bulunamadı"})
+
+
+def _report(request, daily=False):
+    subeid_ = request.query_params.get("sube")
+    if subeid_ and subeid_.isnumeric():
+        subeid = int(subeid_)
+        iliskiler = SubeTemsilcisi.objects.filter(sube__id=subeid, kullanici=request.user)
+
+        iliski = iliskiler[0] if iliskiler.count() > 0 else None
+        if request.user.is_superuser or iliski is not None:
+            aylik_toplam_gelir = 0
+            aylik_toplam_prim = 0
+            bugun = ""
+            if "refdate" in request.query_params.keys():
+                bugun = dateUtilParse(request.query_params["refdate"])
+            else:
+                bugun = datetime.date.today()
+            gidertoplam = extra_expenses_sum(subeid, bugun, daily)["tutar__sum"]
+            if gidertoplam is None:
+                gidertoplam = 0
+            calisan_primler = None
+            if request.user.is_superuser or iliski.ustduzey_hak is True:
+                calisan_primler = {}
+
+            filter = {
+                "secili_sube__id": subeid,
+                "giris_tarih__month": bugun.month,
+                "giris_tarih__year": bugun.year
+            }
+            if daily:
+                filter["giris_tarih__day"] = str(bugun.day)
+
+            aylik_kayitlar = MusteriGirisi.objects.filter(
+                **filter)
+
+            for kayit in aylik_kayitlar:
+                aylik_toplam_prim += kayit.prim
+                aylik_toplam_gelir += kayit.ucret
+                if request.user.is_superuser or iliski.ustduzey_hak is True:
+                    if kayit.calisan.id in calisan_primler.keys():
+                        calisan_primler[kayit.calisan.id] += kayit.prim
+                    else:
+                        calisan_primler[kayit.calisan.id] = kayit.prim
+
+            return Response({
+                "summary": {
+                    "income": aylik_toplam_gelir,
+                    "bonus_grand": aylik_toplam_prim,
+                    "extra_expenses": gidertoplam,
+                    "grand_expenses": aylik_toplam_prim + gidertoplam
+                },
+                "bonuses": calisan_primler,
+
+            })
+        else:
+            return createErrorResponse(403, {"message": "Not authorized for branch"})
+    else:
+        return createErrorResponse(400, {"message": "Branch is not provided"})
+
+
 
 class monthlyReport(APIView):
-     permission_classes = [
-         IsAuthenticated,
-     ]
-     def get(self, request: Request):
-         subeid_ = request.query_params.get("sube")
-         if subeid_ and subeid_.isnumeric():
-            subeid = int(subeid_)
-            iliskiler = SubeTemsilcisi.objects.filter(sube__id=subeid, kullanici=request.user)
+    permission_classes = [
+        IsAuthenticated,
+    ]
 
-            iliski = iliskiler[0] if iliskiler.count() > 0 else None
-            if request.user.is_superuser or iliski is not None:
-                aylik_toplam_gelir = 0
-                aylik_toplam_prim = 0
-                bugun = datetime.date.today()
-                gidertoplam = extra_expenses_sum(subeid, bugun)["tutar__sum"]
-                if gidertoplam is None:
-                    gidertoplam = 0
-                calisan_primler = None
-                if request.user.is_superuser or iliski.ustduzey_hak is True:
-                    calisan_primler = {}
+    def get(self, request: Request):
+        return _report(request)
 
+class dailyReport(APIView):
+    permission_classes = [IsAuthenticated]
 
-                aylik_kayitlar = MusteriGirisi.objects.filter(
-                    secili_sube__id=subeid,
-                    giris_tarih__month=bugun.month,
-                    giris_tarih__year=bugun.year)
-
-                for kayit in aylik_kayitlar:
-                    aylik_toplam_prim += kayit.prim
-                    aylik_toplam_gelir += kayit.ucret
-                    if request.user.is_superuser or iliski.ustduzey_hak is True:
-                        if kayit.calisan.id in calisan_primler.keys():
-                            calisan_primler[kayit.calisan.id] += kayit.prim
-                        else:
-                            calisan_primler[kayit.calisan.id] = kayit.prim
-
-                return Response({
-                    "summary": {
-                        "income": aylik_toplam_gelir,
-                        "bonus_grand": aylik_toplam_prim,
-                        "extra_expenses": gidertoplam,
-                        "grand_expenses": aylik_toplam_prim + gidertoplam
-                    },
-                    "bonuses": calisan_primler,
-
-                })
-            else:
-                return createErrorResponse(403, {"message": "Not authorized for branch"})
-         else:
-             return createErrorResponse(400,{"message": "Branch is not provided"})
+    def get(self, request):
+        return _report(request,True)
