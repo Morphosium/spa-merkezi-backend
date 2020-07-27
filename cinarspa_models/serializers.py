@@ -17,5 +17,6 @@ class SubeSerializer(ModelSerializer):
         fields = [
             "adres",
             "sube_ismi",
-            "id"
+            "id",
+            "kredi"
         ]

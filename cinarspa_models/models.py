@@ -30,6 +30,7 @@ class Musteri(models.Model):
     soyisim = models.CharField(max_length=30)
     email = models.CharField(max_length=100)
     tel = models.CharField(max_length=20)
+    kredi = models.IntegerField(default=0)
 
     def __str__(self):
         return "{} {}".format(self.isim, self.soyisim)
@@ -64,6 +65,7 @@ class MusteriGirisi(models.Model):
     ucret = models.IntegerField(default=0)
     calisan = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     prim = models.IntegerField(default=0)
+    odeme_yontemi = models.CharField(max_length=30, default="Nakit")
     class Meta:
         verbose_name = "Müşteri Girişi"
         verbose_name_plural = "Müşteri girişleri"
@@ -75,3 +77,6 @@ class EkstraGider(models.Model):
     tur = models.CharField(max_length=30)
     tarih = models.DateTimeField()
     tutar = models.IntegerField()
+    class Meta:
+        verbose_name = "Ekstra gider"
+        verbose_name_plural = "Ekstra giderler"

@@ -177,18 +177,11 @@ class yeniMusteriGirisi(APIView):
                     cikis_tarih = None
                     giris_tarih = dateUtilParse(data.get("giris_tarih"))
 
-                    email = ""
-                    tel = ""
-                    if "musteri_email" in data:
-                        email = data.get("musteri_email")
-
-                    if "musteri_tel" in data:
-                        tel = data.get("musteri_tel")
-
                     ucret = data.get("ucret")
                     prim = data.get("prim")
                     calisan = None
                     calisanId = data.get("calisan")
+
                     if calisanId is not None and calisanId.isnumeric():
                         calisan = User.objects.filter(id=int(calisanId))
 
@@ -203,6 +196,20 @@ class yeniMusteriGirisi(APIView):
                     calisanIliski = SubeTemsilcisi.objects.filter(kullanici=calisan[0], sube=data.get("secili_sube"))[0]
 
                     if request.user.is_superuser or iliski is not None:
+                        if data.get("kredi_ekle") is True or data.get("kredi_tuket") is True:
+                            if data.get("kredi_ekle") is True:
+                                # kredi ekleme
+                                kredi = data.get("credit_will_be_added")
+                                if kredi is not None and kredi > 0:
+                                    musteri.kredi = kredi
+
+                            if data.get("kredi_tuket") is True:
+                                if musteri.kredi > 0:
+                                    musteri.kredi = musteri.kredi - 1
+                                else:
+                                    return createErrorResponse(400, {"message", "credit is not enough"})
+                            musteri.save()
+
                         musteriKayit = MusteriGirisi(
                             musteri=musteri,
                             hizmet_turu=data.get("hizmet_turu"),
