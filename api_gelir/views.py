@@ -10,7 +10,7 @@ from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
 from api_gelir.serializers import MusteriGirisiSerializer
-from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi, Musteri
+from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi, Musteri, MusteriKredi
 from cinarspa_models.serializers import MusteriSerializer
 from utils import SubeIliskileri
 from utils.ExtraExpenses import extra_expenses, extra_expenses_sum
@@ -116,6 +116,7 @@ class musteriler(APIView):
                 rd = []
                 musteriler = Musteri.objects.filter(
                     id__in=MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).values_list('musteri', flat=True))
+
                 for musteri in musteriler:
                     rd.append(MusteriSerializer(musteri).data)
                 return Response(rd)
@@ -197,18 +198,19 @@ class yeniMusteriGirisi(APIView):
 
                     if request.user.is_superuser or iliski is not None:
                         if data.get("kredi_ekle") is True or data.get("kredi_tuket") is True:
+                            kredi, taze = MusteriKredi.objects.get_or_create(musteri=musteri, sube=iliski.sube)
                             if data.get("kredi_ekle") is True:
                                 # kredi ekleme
-                                kredi = data.get("credit_will_be_added")
-                                if kredi is not None and kredi > 0:
-                                    musteri.kredi = kredi
+                                kredi_eklenecek = data.get("credit_will_be_added")
+                                if kredi_eklenecek is not None and kredi_eklenecek > 0:
+                                    kredi.sayi += kredi_eklenecek
 
                             if data.get("kredi_tuket") is True:
-                                if musteri.kredi > 0:
-                                    musteri.kredi = musteri.kredi - 1
+                                if kredi.sayi > 0:
+                                    kredi.sayi = kredi.sayi - 1
                                 else:
-                                    return createErrorResponse(400, {"message", "credit is not enough"})
-                            musteri.save()
+                                    return createErrorResponse(400, {"message": "Müşterinin kredi hakkı bulunmamaktadır"})
+                            kredi.save()
 
                         musteriKayit = MusteriGirisi(
                             musteri=musteri,
@@ -216,6 +218,7 @@ class yeniMusteriGirisi(APIView):
                             secili_sube=iliski.sube,
                             giris_tarih=giris_tarih,
                             cikis_tarih=cikis_tarih,
+                            odeme_yontemi=data.get("odeme_yontemi"),
                             ucret=ucret if ucret is not None else 0,
                             calisan=calisanIliski.kullanici,
                             prim=prim

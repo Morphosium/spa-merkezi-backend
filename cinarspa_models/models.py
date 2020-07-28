@@ -80,3 +80,8 @@ class EkstraGider(models.Model):
     class Meta:
         verbose_name = "Ekstra gider"
         verbose_name_plural = "Ekstra giderler"
+
+class MusteriKredi(models.Model):
+    musteri = models.ForeignKey(Musteri, on_delete=models.CASCADE)
+    sube = models.ForeignKey(Sube, on_delete=models.CASCADE)
+    sayi = models.IntegerField(default=0)
