@@ -1,7 +1,7 @@
-from cinarspa_models.models import MusteriGirisi
+from cinarspa_models.models import MusteriGirisi, MusteriKredi
 from rest_framework import serializers
 
-from cinarspa_models.serializers import MusteriSerializer
+from cinarspa_models.serializers import MusteriSerializer, SubeSerializer
 from api_user.serializers import  UserSerializer
 
 class MusteriGirisiSerializer(serializers.ModelSerializer):
@@ -23,4 +23,17 @@ class MusteriGirisiSerializer(serializers.ModelSerializer):
             "ucret",
             "prim"
 
+        ]
+
+
+class MusteriKrediSerializer(serializers.ModelSerializer):
+    musteri = MusteriSerializer()
+    sube = SubeSerializer()
+    class Meta:
+        model = MusteriKredi
+        fields = [
+            "sayi",
+            "musteri",
+            "sube",
+            "hizmet_turu",
         ]

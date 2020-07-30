@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
-from api_gelir.serializers import MusteriGirisiSerializer
+from api_gelir.serializers import MusteriGirisiSerializer, MusteriKrediSerializer
 from cinarspa_models.models import MusteriGirisi, SubeTemsilcisi, Musteri, MusteriKredi
 from cinarspa_models.serializers import MusteriSerializer
 from utils import SubeIliskileri
@@ -114,8 +114,10 @@ class musteriler(APIView):
             temsil = iliskiVarMi(request.user, subeFiltre)
             if request.user.is_superuser or temsil is not None:
                 rd = []
-                musteriler = Musteri.objects.filter(
-                    id__in=MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).values_list('musteri', flat=True))
+                musteriIds = MusteriGirisi.objects.filter(secili_sube__id=subeFiltre).values_list('musteri', flat=True)
+                musteriler = Musteri.objects.filter(id__in=musteriIds)
+                # sube__id=subeFiltre
+                # krediler =
 
                 for musteri in musteriler:
                     rd.append(MusteriSerializer(musteri).data)
@@ -124,6 +126,41 @@ class musteriler(APIView):
                 return createErrorResponse(404, {"message": "Sube is not found"})
         else:
             return createErrorResponse(400, {"message": "Sube id is invalid"})
+
+
+class musteriKredi(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request):
+        load = request.data
+        subeid = load.get("sube_id")
+
+
+        if subeid is not None:
+            subeid = int(subeid)
+            if iliskiVarMi(request.user, subeid) is not None:
+                musteri = try_fetch(load.get("musteri_id"),
+                                    load.get("musteri_isim"),
+                                    load.get("musteri_soyisim"),
+                                    load.get("musteri_email"),
+                                    load.get("musteri_tel"), False)
+                if musteri is not None:
+                    krediler = MusteriKredi.objects.filter(musteri=musteri, sube__id=subeid)
+                    ra = []
+                    if krediler is not None:
+                        for kredi in krediler:
+                            ra.append(MusteriKrediSerializer(kredi).data)
+                        return Response(ra)
+                    else:
+                        return Response([])
+                else:
+                    return Response([])
+            else:
+                return Response({"message": "Şube yetkisi bulunamadı"}, status=401)
+        else:
+            return Response({"message": "Girilen gerekli bilgiler geçerli değil"}, status=400)
 
 
 class yeniMusteriGirisi(APIView):
@@ -198,18 +235,26 @@ class yeniMusteriGirisi(APIView):
 
                     if request.user.is_superuser or iliski is not None:
                         if data.get("kredi_ekle") is True or data.get("kredi_tuket") is True:
-                            kredi, taze = MusteriKredi.objects.get_or_create(musteri=musteri, sube=iliski.sube)
+                            tuketilecek_kredi_turu = data.get("kredi_tuketim_turu")
+                            eklenecek_kredi_turu = data.get("eklenecek_kredi_turu")
+
                             if data.get("kredi_ekle") is True:
+                                kredi, taze = MusteriKredi.objects.get_or_create(musteri=musteri, sube=iliski.sube,
+                                                                                 hizmet_turu=eklenecek_kredi_turu)
                                 # kredi ekleme
                                 kredi_eklenecek = data.get("credit_will_be_added")
+
                                 if kredi_eklenecek is not None and kredi_eklenecek > 0:
                                     kredi.sayi += kredi_eklenecek
 
                             if data.get("kredi_tuket") is True:
+                                kredi, taze = MusteriKredi.objects.get_or_create(musteri=musteri, sube=iliski.sube,
+                                                                                 hizmet_turu=tuketilecek_kredi_turu)
                                 if kredi.sayi > 0:
                                     kredi.sayi = kredi.sayi - 1
                                 else:
-                                    return createErrorResponse(400, {"message": "Müşterinin kredi hakkı bulunmamaktadır"})
+                                    return createErrorResponse(400,
+                                                               {"message": "Müşterinin kredi hakkı bulunmamaktadır"})
                             kredi.save()
 
                         musteriKayit = MusteriGirisi(
@@ -419,7 +464,6 @@ def _report(request, daily=False):
         return createErrorResponse(400, {"message": "Branch is not provided"})
 
 
-
 class monthlyReport(APIView):
     permission_classes = [
         IsAuthenticated,
@@ -428,8 +472,9 @@ class monthlyReport(APIView):
     def get(self, request: Request):
         return _report(request)
 
+
 class dailyReport(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return _report(request,True)
+        return _report(request, True)

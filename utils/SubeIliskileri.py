@@ -21,7 +21,8 @@ def iliskiVarMi(user: User, subeId = 0, alreadySubeList= None) -> SubeTemsilcisi
     else:
         temsiller = ""
         if user.is_superuser:
-            temsiller = SubeTemsilcisi.objects.filter(sube__id=subeId)
+            return True
+            # temsiller = SubeTemsilcisi.objects.filter(sube__id=subeId)
         elif user.is_staff:
             temsiller = SubeTemsilcisi.objects.filter(kullanici=user, sube__id=subeId)
-        return temsiller[0] if temsiller.count() > 0 else None
+            return temsiller[0] if temsiller.count() > 0 else None

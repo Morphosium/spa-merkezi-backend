@@ -85,3 +85,4 @@ class MusteriKredi(models.Model):
     musteri = models.ForeignKey(Musteri, on_delete=models.CASCADE)
     sube = models.ForeignKey(Sube, on_delete=models.CASCADE)
     sayi = models.IntegerField(default=0)
+    hizmet_turu = models.CharField(max_length=50, default="")

@@ -7,7 +7,7 @@ class MusteriSerializer(ModelSerializer):
     class Meta:
         model = Musteri
         fields = [
-            "id", "isim", "soyisim", "tel", "email", "kredi"
+            "id", "isim", "soyisim", "tel", "email"
         ]
 
 
