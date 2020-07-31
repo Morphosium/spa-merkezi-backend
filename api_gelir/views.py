@@ -137,7 +137,6 @@ class musteriKredi(APIView):
         load = request.data
         subeid = load.get("sube_id")
 
-
         if subeid is not None:
             subeid = int(subeid)
             if iliskiVarMi(request.user, subeid) is not None:
@@ -236,26 +235,43 @@ class yeniMusteriGirisi(APIView):
                     if request.user.is_superuser or iliski is not None:
                         if data.get("kredi_ekle") is True or data.get("kredi_tuket") is True:
                             tuketilecek_kredi_turu = data.get("kredi_tuketim_turu")
-                            eklenecek_kredi_turu = data.get("eklenecek_kredi_turu")
+                            eklenecek_kredi_turu = data.get("kredi_eklenme_turu")
 
-                            if data.get("kredi_ekle") is True:
-                                kredi, taze = MusteriKredi.objects.get_or_create(musteri=musteri, sube=iliski.sube,
-                                                                                 hizmet_turu=eklenecek_kredi_turu)
+                            eklenecek_kredi, ek_taze = None, None
+                            tuketilecek_kredi, tk_taze = None, None
+
+                            if data.get("kredi_ekle") and eklenecek_kredi_turu and \
+                                    eklenecek_kredi_turu.isspace() is not True:
+                                eklenecek_kredi, ek_taze = MusteriKredi.objects.get_or_create(musteri=musteri,
+                                                                                              sube=iliski.sube,
+                                                                                              hizmet_turu=eklenecek_kredi_turu)
+
+                            if eklenecek_kredi:
                                 # kredi ekleme
-                                kredi_eklenecek = data.get("credit_will_be_added")
+                                kredi_eklenecek_sayi = data.get("credit_will_be_added")
+                                if kredi_eklenecek_sayi is not None and kredi_eklenecek_sayi > 0:
+                                    eklenecek_kredi.sayi += kredi_eklenecek_sayi
 
-                                if kredi_eklenecek is not None and kredi_eklenecek > 0:
-                                    kredi.sayi += kredi_eklenecek
+                            if data.get("kredi_tuket") and tuketilecek_kredi_turu and \
+                                    tuketilecek_kredi_turu.isspace() is not True:
+                                if (eklenecek_kredi is not None) and (eklenecek_kredi_turu == tuketilecek_kredi_turu):
+                                    tuketilecek_kredi = eklenecek_kredi
+                                else:
+                                    tuketilecek_kredi, tk_taze = MusteriKredi.objects. \
+                                        get_or_create(musteri=musteri,
+                                                      sube=iliski.sube, hizmet_turu=tuketilecek_kredi_turu)
 
-                            if data.get("kredi_tuket") is True:
-                                kredi, taze = MusteriKredi.objects.get_or_create(musteri=musteri, sube=iliski.sube,
-                                                                                 hizmet_turu=tuketilecek_kredi_turu)
-                                if kredi.sayi > 0:
-                                    kredi.sayi = kredi.sayi - 1
+                            if tuketilecek_kredi:
+                                if tuketilecek_kredi.sayi > 0:
+                                    tuketilecek_kredi.sayi -= 1
                                 else:
                                     return createErrorResponse(400,
                                                                {"message": "Müşterinin kredi hakkı bulunmamaktadır"})
-                            kredi.save()
+                            if eklenecek_kredi and \
+                                    (tuketilecek_kredi is None or tuketilecek_kredi.id != eklenecek_kredi.id):
+                                eklenecek_kredi.save()
+                            if tuketilecek_kredi:
+                                tuketilecek_kredi.save()
 
                         musteriKayit = MusteriGirisi(
                             musteri=musteri,
@@ -433,7 +449,7 @@ def _report(request, daily=False):
                 "giris_tarih__month": bugun.month,
                 "giris_tarih__year": bugun.year
             }
-            if daily:
+            if daily is True:
                 filter["giris_tarih__day"] = str(bugun.day)
 
             aylik_kayitlar = MusteriGirisi.objects.filter(
