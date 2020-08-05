@@ -21,6 +21,7 @@ from utils.errorResponse import createErrorResponse
 from utils.musteri_girisi import makeArraySerializationsQuery
 from utils.pagination import pagination
 from dateutil.parser import parse as dateUtilParse
+from django.utils import timezone
 import datetime
 import re
 
@@ -436,7 +437,7 @@ def _report(request, daily=False):
             if "refdate" in request.query_params.keys():
                 bugun = dateUtilParse(request.query_params["refdate"])
             else:
-                bugun = datetime.date.today()
+                bugun = timezone.now()
             gidertoplam = extra_expenses_sum(subeid, bugun, daily)["tutar__sum"]
             if gidertoplam is None:
                 gidertoplam = 0

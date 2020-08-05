@@ -21,7 +21,8 @@ class MusteriGirisiSerializer(serializers.ModelSerializer):
             "giris_tarih",
             "cikis_tarih",
             "ucret",
-            "prim"
+            "prim",
+            "odeme_yontemi"
 
         ]
 
