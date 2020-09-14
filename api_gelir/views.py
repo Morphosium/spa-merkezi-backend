@@ -455,7 +455,9 @@ def _report(request, daily=False):
 
             aylik_kayitlar = MusteriGirisi.objects.filter(
                 **filter)
-
+            card_income = 0
+            cash_income = 0
+            other_income = 0
             for kayit in aylik_kayitlar:
                 aylik_toplam_prim += kayit.prim
                 aylik_toplam_gelir += kayit.ucret
@@ -465,9 +467,20 @@ def _report(request, daily=False):
                     else:
                         calisan_primler[kayit.calisan.id] = kayit.prim
 
+                if kayit.odeme_yontemi == "Kart":
+                    card_income += kayit.ucret
+                elif kayit.odeme_yontemi == "Nakit":
+                    cash_income += kayit.ucret
+                else:
+                    other_income += kayit.ucret
             return Response({
                 "summary": {
                     "income": aylik_toplam_gelir,
+                    "income_channels": {
+                        "cash": cash_income,
+                        "card": card_income,
+                        "other": other_income
+                    },
                     "bonus_grand": aylik_toplam_prim,
                     "extra_expenses": gidertoplam,
                     "grand_expenses": aylik_toplam_prim + gidertoplam
