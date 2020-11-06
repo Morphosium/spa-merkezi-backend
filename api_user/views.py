@@ -122,7 +122,7 @@ class getBranches(APIView):
             } for temsil in temsiller]
 
             return Response(ls)
-
+        #todo: return if user is not enough these requirements
 
 
 class getStaffsInBranch(APIView):
